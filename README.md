@@ -18,7 +18,9 @@ Este é um aplicativo web simples para organizar e classificar imagens em pastas
 ## Pré-requisitos
 Certifique-se de que você tem o Ruby instalado. Para verificar, abra o terminal e execute:
 
-` ruby -v `
+```
+ruby -v 
+```
 
 Você também precisará instalar as gems do Sinatra e do Puma (o servidor web que rodará a aplicação):
 
@@ -47,7 +49,9 @@ Copie o código de cada arquivo ( app.rb, style.css, index.erb, e select_folder.
 
 3. Execute o Aplicativo: Abra o terminal, navegue até o diretório raiz do projeto e execute o comando:
 
-`ruby app2.rb`
+```
+ruby app.rb
+```
 
 4. Acesse no Navegador: Abra seu navegador e acesse http://localhost:4567.
 
