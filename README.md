@@ -35,6 +35,7 @@ gem install puma
 .
 ├── app.rb
 ├── public/
+    ├── images/
 │   └── style.css
 └── views/
     ├── index.erb
@@ -43,11 +44,11 @@ gem install puma
 
 Copie o código de cada arquivo ( app.rb, style.css, index.erb, e select_folder.erb) para seus respectivos lugares.
 
-2. Adicione suas Imagens: Coloque as imagens que você deseja classificar em uma pasta no seu computador.
+2. Adicione suas Imagens: Coloque as imagens que você deseja classificar em uma pasta na pasta public/images da aplicação.
 
 3. Execute o Aplicativo: Abra o terminal, navegue até o diretório raiz do projeto e execute o comando:
 
-`ruby app2.rb`
+`ruby app.rb`
 
 4. Acesse no Navegador: Abra seu navegador e acesse http://localhost:4567.
 
