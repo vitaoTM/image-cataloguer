@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classificador de Imagens</title>
+  <script>
+    function setTagAndSubmit(tag) {
+      document.getElementById('tag-input').value = tag;
+      document.getElementById('tag-form').submit();
+    }
+  </script>
+  <link rel="stylesheet" href="/style.css">
+
+</head>
+<body>
+  <div class="container">
+    <h1>Classificador de Imagens</h1>
+
+    <% if image_path %>
+      <div class="image-display">
+        <img src="/image_file?path=<%= image_path %>" alt="Imagem para classificar">
+      </div>
+      <div class="controls">
+        <form id="tag-form" class="tag-form" action="/classify" method="post">
+          <input type="hidden" name="image_path" value="<%= image_path %>">
+          <input id="tag-input" type="text" name="tag" placeholder="Digite uma tag (ex: paisagem, familia, férias)" required>
+          <button type="submit">Classificar e Mover</button>
+        </form>
+        
+        <div class="quick-tags">
+          <% recent_tags.each do |tag| %>
+            <button class="tag-button" onclick="setTagAndSubmit('<%= tag %>')"><%= tag.capitalize %></button>
+          <% end %>
+        </div>
+
+        <div class="action-buttons">
+          <form action="/skip" method="post">
+            <button class="skip-button" type="submit">Pular</button>
+          </form>
+          <form action="/undo" method="post">
+            <button class="undo-button" type="submit" <%= 'disabled' if !history_available %>>Desfazer</button>
+          </form>
+        </div>
+      </div>
+      <p class="count">Imagens restantes na fila: <%= remaining %></p>
+    <% else %>
+      <p class="no-images">Todas as imagens foram classificadas!</p>
+      <p class="count">Você pode adicionar mais imagens na pasta que você escolheu, ou <a href="/">recomeçar com uma nova pasta</a>.</p>
+    <% end %>
+  </div>
+</body>
+</html
