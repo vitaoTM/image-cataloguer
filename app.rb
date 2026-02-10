@@ -26,7 +26,7 @@ get '/' do
 
   # Inicializa a fila de imagens se não existir ou se mudou a pasta
   if session[:image_queue].nil? || session[:last_images_root] != images_root.to_s
-    all_images = Dir.glob(images_root.join('*.{jpg,jpeg,png,gif}'))
+    all_images = Dir.glob(images_root.join('*.{jpg,jpeg,png,gif,webp}'))
     session[:image_queue] = all_images
     session[:last_images_root] = images_root.to_s
   end
