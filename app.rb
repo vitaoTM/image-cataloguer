@@ -1,3 +1,4 @@
+# app.rb
 require 'sinatra'
 require 'pathname'
 require 'fileutils'
@@ -6,33 +7,45 @@ require 'json'
 # Ativa as sessões para armazenar o estado do aplicativo
 enable :sessions
 
+# Define um segredo de sessão para prevenir erros de HMAC.
+set :session_secret, ENV['SESSION_SECRET'] || 'uma_string_secreta_muito_longa_e_aleatoria_para_assinatura_de_sessoes'
+
 # Configurações do Sinatra
 set :bind, '0.0.0.0'
 set :port, 4567
 
+# Helper method to get all images from a root path
+def get_image_list(root_path)
+  return [] unless root_path && Pathname.new(root_path).directory?
+  Dir.glob(Pathname.new(root_path).join('*.{jpg,jpeg,png,gif}'))
+      .sort # Sort by name for consistency
+end
+
 # Rota principal - exibe a próxima imagem a ser classificada ou o formulário de pasta
 get '/' do
   if params[:path].nil? || params[:path].empty?
-    session[:images_root] = nil
-    session[:image_queue] = nil
+    session.clear # Clear the entire session on a new start
     return erb :select_folder
   end
 
-  images_root = Pathname.new(params[:path])
-  session[:images_root] = images_root.to_s
-
-  session[:history] ||= []
-  session[:recent_tags] ||= []
-
-  # Inicializa a fila de imagens se não existir ou se mudou a pasta
-  if session[:image_queue].nil? || session[:last_images_root] != images_root.to_s
-    all_images = Dir.glob(images_root.join('*.{jpg,jpeg,png,gif,webp}'))
-    session[:image_queue] = all_images
-    session[:last_images_root] = images_root.to_s
+  # Initialize session if it's new
+  if session[:images_root] != params[:path]
+    session[:images_root] = params[:path].to_s
+    session[:current_image_index] = 0
+    session[:history] = []
+    session[:recent_tags] = []
   end
 
-  current_image_path = session[:image_queue]&.first
-  remaining_count = session[:image_queue]&.size || 0
+  all_images = get_image_list(session[:images_root])
+
+  # Ensure index is within bounds
+  if session[:current_image_index] >= all_images.size
+    session[:current_image_index] = all_images.size - 1
+    session[:current_image_index] = 0 if session[:current_image_index] < 0
+  end
+
+  current_image_path = all_images[session[:current_image_index]]
+  remaining_count = all_images.size - session[:current_image_index]
 
   erb :index, locals: {
     image_path: current_image_path,
@@ -69,13 +82,16 @@ post '/classify' do
     dest_dir.mkpath unless dest_dir.exist?
     FileUtils.mv(source_path.to_s, dest_path.to_s)
 
-    session[:history] << { source: image_path, destination: dest_path.to_s }
+    session[:history] << { source: image_path, destination: dest_path.to_s, action: :classify }
+    session[:history] = session[:history].last(10) # Limit history size
+
     session[:recent_tags].unshift(tag)
     session[:recent_tags].uniq!
     session[:recent_tags] = session[:recent_tags].take(6)
-
-    # Remove a imagem classificada da fila
-    session[:image_queue]&.delete(image_path)
+    
+    # NOTE: No change to current_image_index is needed.
+    # The image at the current index was moved, so the list will shrink,
+    # and the next image will naturally be at the same index.
   end
 
   redirect to("/?path=#{session[:images_root]}")
@@ -95,6 +111,8 @@ post '/undo' do
       # Move o arquivo de volta para a pasta de origem
       FileUtils.mv(source_path.to_s, dest_path.to_s)
     end
+    # NOTE: No change to current_image_index is needed.
+    # When the page reloads, the restored image will appear at the current index.
   end
 
   redirect to("/?path=#{session[:images_root]}")
@@ -104,11 +122,11 @@ end
 post '/skip' do
   redirect to('/') unless session[:images_root]
   
-  if session[:image_queue]&.any?
-    skipped = session[:image_queue].shift
-    session[:image_queue] << skipped if skipped
+  all_images = get_image_list(session[:images_root])
+  # Only increment if not at the end of the list
+  if session[:current_image_index] < all_images.size - 1
+    session[:current_image_index] += 1
   end
-  # A lógica de pular não move o arquivo, apenas recarrega a página
-  # e a próxima imagem na pasta será exibida
+
   redirect to("/?path=#{session[:images_root]}")
 end
